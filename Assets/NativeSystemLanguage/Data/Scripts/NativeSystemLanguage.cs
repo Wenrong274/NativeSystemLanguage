@@ -9,36 +9,75 @@ public class NativeSystemLanguage
     {
         switch (Application.platform)
         {
-            case RuntimePlatform.IPhonePlayer:
-                return IPhoneLanguage();
-            case RuntimePlatform.Android:
             case RuntimePlatform.WindowsEditor:
             case RuntimePlatform.WindowsPlayer:
-            default:
                 return WindowsLanguage();
+            case RuntimePlatform.IPhonePlayer:
+                return iOSLanguage();
+            case RuntimePlatform.Android:
+                return AndroidLanguage();
+            default:
+                return Application.systemLanguage.ToString();
         }
     }
 
-    private static string IPhoneLanguage()
-    {
-        return GetNativeSystemLanguage(CurIOSLang);
-    }
-
+    #region iOS
     [DllImport("__Internal")]
     private static extern string CurIOSLang();
 
+    private static string iOSLanguage()
+    {
+        return GetNativeSystemLanguage(CurIOSLang);
+    }
+    #endregion
+    #region Android
+    private static string AndroidLanguage()
+    {
+        return GetNativeSystemLanguage(CurrentAndroidLanguage);
+    }
+
+    private static string CurrentAndroidLanguage()
+    {
+        string result = "";
+        using (AndroidJavaClass cls = new AndroidJavaClass("java.util.Locale"))
+        {
+            if (cls != null)
+            {
+                using (AndroidJavaObject locale = cls.CallStatic<AndroidJavaObject>("getDefault"))
+                {
+                    if (locale != null)
+                    {
+                        result = locale.Call<string>("getLanguage") + "_" + locale.Call<string>("getDefault");
+                        Debug.Log("Android lang: " + result);
+                    }
+                    else
+                    {
+                        Debug.Log("locale null");
+                    }
+                }
+            }
+            else
+            {
+                Debug.Log("cls null");
+            }
+        }
+        return result;
+    }
+    #endregion
+    #region Windows
     private static string WindowsLanguage()
     {
         return GetNativeSystemLanguage(GetWindowsCultureInfoName);
     }
 
+    [DllImport("kernel32.dll")]
+    private static extern int GetSystemDefaultLCID();
+
     private static string GetWindowsCultureInfoName()
     {
         return CultureInfo.GetCultureInfo(GetSystemDefaultLCID()).Name;
     }
-
-    [DllImport("KERNEL32.DLL")]
-    private static extern int GetSystemDefaultLCID();
+    #endregion
 
     private static string GetNativeSystemLanguage(Func<string> GetNativeLanguageMethod)
     {
@@ -48,7 +87,7 @@ public class NativeSystemLanguage
         }
         catch
         {
-            return "zh-CN";
+            return "zh-TW";
         }
     }
 
@@ -91,6 +130,7 @@ public class NativeSystemLanguage
         }
 
     }
+
     private static string GetLanguageFamily(string systemLanguage)
     {
         if (systemLanguage.Contains("zh"))
