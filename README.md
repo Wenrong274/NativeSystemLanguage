@@ -1,4 +1,4 @@
-# Unity 5.3 取得 iOS 系統語系
+# Unity 5.3 取得 Window、Android、iOS 系統語系
 
 ## 使用方式
 
